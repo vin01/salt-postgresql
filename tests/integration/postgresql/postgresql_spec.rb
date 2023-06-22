@@ -148,6 +148,9 @@ control 'psql' do
   describe sql.query("INSERT INTO tests (name) VALUES ('shouldfail');", ['production']) do
     its('output') { should match /permission denied for table tests/ }
   end
+  describe sql.query("CREATE TABLE should_fail(pkey serial PRIMARY KEY);", ['production']) do
+    its('output') { should match /permission denied for schema public/ }
+  end
   describe sql.query('SELECT * FROM tests;', ['production']) do
     its('output') { should match /success/ }
     its('output') { should_not match /shouldfail/ }
