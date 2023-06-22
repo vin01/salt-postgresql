@@ -124,6 +124,12 @@ control 'psql' do
     its('output') { should eq('INSERT 0 1') }
   end
 
+  # Check create permission for allowall
+  sql = postgres_session('allowall', '', '', '', '/run/postgresql')
+  describe sql.query("CREATE TABLE tests_allowall(id SERIAL PRIMARY KEY, name VARCHAR(255));", ['production']) do
+    its('output') { should eq('CREATE TABLE') }
+  end
+
   # Assert that owner of production database is set correctly
   sql = postgres_session('postgres', '', '', '', '/run/postgresql')
   describe sql.query("SELECT pg_user.usename FROM pg_database JOIN pg_user ON pg_database.datdba=pg_user.usesysid WHERE datname='production';") do

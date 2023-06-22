@@ -166,14 +166,13 @@ extension_{{ config['database'] }}_{{ extension }}_{{ index }}:
     - if_not_exists: true
 {% endfor %}
 
-
 # Grant read-only permissions to database if read_only flag is set
 {% if config['read_only']|default(false) %}
 
 # Revoke default CREATE privilege. By default, any role can create objects in the public schema
 revoke_create_on_schema_public-{{ index }}:
   postgres_privileges.absent:
-    - name: {{ config['username'] }}
+    - name: public
     - object_name: public
     - object_type: schema
     - privileges: [CREATE]
@@ -223,5 +222,13 @@ alter_default_privileges-{{ index }}:
     - name: psql {{ config['database'] }} -t -c 'ALTER DEFAULT PRIVILEGES FOR ROLE {{ config['db_owner']|default('postgres') }} IN SCHEMA public GRANT SELECT ON TABLES TO "{{ config['username'] }}";'
     - unless: psql {{ config['database'] }} -t -c "SELECT 1 FROM pg_default_acl a JOIN pg_namespace b ON a.defaclnamespace=b.oid WHERE defaclacl='{ {{ config['username'] }}=r/{{ config['db_owner']|default('postgres') }} }'" |grep -q 1
     - runas: postgres
+{% elif config['database'] != 'replication' %}
+grant_create_on_schema_public-{{ index }}:
+  postgres_privileges.present:
+    - name: {{ config['username'] }}
+    - object_name: public
+    - object_type: schema
+    - privileges: [CREATE]
+    - maintenance_db: {{ config['database'] }}
 {% endif %}
 {% endfor %}
